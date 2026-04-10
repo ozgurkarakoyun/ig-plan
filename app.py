@@ -142,6 +142,76 @@ def export_csv():
     return send_file(bbuf, mimetype="text/csv", as_attachment=True,
                      download_name=f"igplan_{bas}_{bit}.csv")
 
+# ── AI ROUTE ──────────────────────────────────────────────────────────────────
+import urllib.request, json as json_lib
+
+ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+
+UYARI_TR = "⚠️ Bu paylaşım yalnızca bilgilendirme amaçlıdır. Tedaviler kişiden kişiye farklılık gösterir. Herhangi bir tedavi uygulamadan önce mutlaka bir sağlık profesyoneliyle görüşünüz."
+UYARI_EN = "⚠️ This post is for informational purposes only. Treatments vary from person to person. Please consult a healthcare professional before applying any treatment."
+
+@app.route("/api/ai_yaz", methods=["POST"])
+def api_ai_yaz():
+    if not admin_kontrol(request.args.get("s", "")):
+        return jsonify({"hata": "Yetkisiz"}), 401
+
+    if not ANTHROPIC_KEY:
+        return jsonify({"ok": False, "mesaj": "ANTHROPIC_API_KEY tanımlı değil. Railway Variables'a ekleyin."})
+
+    d     = request.get_json()
+    konu  = d.get("konu", "").strip()
+    tip   = d.get("tip",  "egitim")
+    dil   = d.get("dil",  "tr")
+    ton   = d.get("ton",  "hasta dostu ve sıcak")
+
+    if not konu:
+        return jsonify({"ok": False, "mesaj": "Konu boş olamaz."})
+
+    dil_adi = "Türkçe" if dil == "tr" else "İngilizce"
+    uyari   = UYARI_TR if dil == "tr" else UYARI_EN
+
+    prompt = f"""Sen Dr. Özgür Karakoyun'un Instagram hesabı için {dil_adi} içerik yazıyorsun.
+Dr. Karakoyun Tekirdağ'da çalışan bir ortopedi ve travmatoloji uzmanıdır;
+uzuv uzatma, kemik deformitesi düzeltme, osseointegrasyon ve kırık tedavisi konularında uzmanlaşmıştır.
+
+Konu: {konu}
+İçerik tipi: {TIP_LABEL.get(tip, tip)}
+Ton: {ton}
+Dil: {dil_adi}
+
+Lütfen şunu üret:
+1. Instagram yazısı — etkileyici giriş, bilgi/içerik, kapanış. Emoji kullan.
+2. Yazının sonuna ayrı satırda şu uyarıyı AYNEN ekle:
+"{uyari}"
+3. 15-20 hashtag (#ile)
+
+Sadece içeriği yaz, başka açıklama ekleme."""
+
+    try:
+        payload = json_lib.dumps({
+            "model":      "claude-sonnet-4-20250514",
+            "max_tokens": 1200,
+            "messages":   [{"role": "user", "content": prompt}]
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data    = payload,
+            headers = {
+                "Content-Type":      "application/json",
+                "x-api-key":         ANTHROPIC_KEY,
+                "anthropic-version": "2023-06-01"
+            },
+            method = "POST"
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json_lib.loads(resp.read().decode("utf-8"))
+        yazi = result["content"][0]["text"]
+        return jsonify({"ok": True, "yazi": yazi})
+
+    except Exception as e:
+        return jsonify({"ok": False, "mesaj": f"API hatası: {str(e)}"})
+
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     init_db()
