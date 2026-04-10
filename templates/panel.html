@@ -458,41 +458,29 @@ async function aiUret(){
   if(!konu){alert("Önce konu alanını doldurun.");return}
   const dil=document.getElementById("aiDil").value;
   const ton=document.getElementById("aiTon").value;
-  const uyari=dil==="tr"?UYARI_TR:UYARI_EN;
-  const dilAdi=dil==="tr"?"Türkçe":"İngilizce";
-
-  const prompt=`Sen Dr. Özgür Karakoyun'un Instagram hesabı için ${dilAdi} içerik yazıyorsun. Dr. Karakoyun Tekirdağ'da çalışan bir ortopedi ve travmatoloji uzmanıdır; uzuv uzatma, kemik deformitesi düzeltme, osseointegrasyon ve kırık tedavisi konularında uzmanlaşmıştır.
-
-Konu: ${konu}
-İçerik tipi: ${TIP_LABEL[tip]}
-Ton: ${ton}
-Dil: ${dilAdi}
-
-Lütfen şunu üret:
-1. Instagram yazısı — etkileyici giriş, bilgi/içerik, kapanış. Emoji kullan.
-2. Yazının sonuna ayrı satırda şu uyarıyı AYNEN ekle: "${uyari}"
-3. 15-20 hashtag (#ile)
-
-Sadece içeriği yaz.`;
 
   const btn=document.getElementById("aiBtn");
   const out=document.getElementById("aiOut");
   btn.disabled=true; btn.textContent="Yazılıyor...";
-  out.style.display="block"; out.textContent="";
+  out.style.display="block"; out.textContent="⏳ İçerik hazırlanıyor...";
   document.getElementById("aiKopyalaBtn").style.display="none";
 
   try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
+    const res=await fetch(A("/api/ai_yaz"),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:prompt}]})
+      body:JSON.stringify({konu,tip,dil,ton})
     });
     const data=await res.json();
-    aiSonuc=data.content[0].text;
-    out.textContent=aiSonuc;
-    document.getElementById("aiKopyalaBtn").style.display="block";
+    if(data.ok){
+      aiSonuc=data.yazi;
+      out.textContent=aiSonuc;
+      document.getElementById("aiKopyalaBtn").style.display="block";
+    } else {
+      out.textContent="❌ "+data.mesaj;
+    }
   }catch(e){
-    out.textContent="Hata: "+e.message;
+    out.textContent="❌ Sunucuya bağlanılamadı: "+e.message;
   }finally{
     btn.disabled=false; btn.textContent="✨ AI ile Yaz";
   }
