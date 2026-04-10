@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>İG Plan — Giriş</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:40px 32px;width:100%;max-width:340px;text-align:center}
+.logo{font-size:40px;margin-bottom:16px}
+h1{font-size:20px;margin-bottom:6px}
+.sub{color:#94a3b8;font-size:13px;margin-bottom:28px}
+input{width:100%;background:#0f172a;border:1px solid #334155;border-radius:10px;color:#f1f5f9;font-size:16px;padding:13px 16px;margin-bottom:12px;outline:none}
+input:focus{border-color:#a855f7}
+.btn{width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.btn:hover{opacity:.9}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">📅</div>
+  <h1>İG İçerik Planlayıcı</h1>
+  <p class="sub">Dr. Özgür Karakoyun</p>
+  <input type="password" id="s" placeholder="Şifre" autofocus>
+  <button class="btn" onclick="gir()">Giriş Yap</button>
+</div>
+<script>
+function gir(){
+  const s=document.getElementById("s").value.trim();
+  if(s) window.location.href="/admin/"+encodeURIComponent(s);
+}
+document.getElementById("s").addEventListener("keydown",e=>{if(e.key==="Enter")gir()});
+</script>
+</body>
+</html>
