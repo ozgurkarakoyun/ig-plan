@@ -189,7 +189,7 @@ Sadece içeriği yaz, başka açıklama ekleme."""
 
     try:
         payload = json_lib.dumps({
-            "model":      "claude-sonnet-4-20250514",
+            "model":      "claude-sonnet-4-5",
             "max_tokens": 1200,
             "messages":   [{"role": "user", "content": prompt}]
         }).encode("utf-8")
@@ -204,13 +204,21 @@ Sadece içeriği yaz, başka açıklama ekleme."""
             },
             method = "POST"
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             result = json_lib.loads(resp.read().decode("utf-8"))
         yazi = result["content"][0]["text"]
         return jsonify({"ok": True, "yazi": yazi})
 
+    except urllib.error.HTTPError as e:
+        hata_detay = e.read().decode("utf-8")
+        try:
+            hata_json = json_lib.loads(hata_detay)
+            hata_mesaj = hata_json.get("error", {}).get("message", hata_detay)
+        except:
+            hata_mesaj = hata_detay[:200]
+        return jsonify({"ok": False, "mesaj": f"API hatası {e.code}: {hata_mesaj}"})
     except Exception as e:
-        return jsonify({"ok": False, "mesaj": f"API hatası: {str(e)}"})
+        return jsonify({"ok": False, "mesaj": f"Bağlantı hatası: {str(e)}"})
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
